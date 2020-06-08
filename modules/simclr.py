@@ -12,7 +12,8 @@ class Identity(nn.Module):
 
 class SimCLR(nn.Module):
     """
-    We opt for simplicity and adopt the commonly used ResNet (He et al., 2016) to obtain hi = f(x ̃i) = ResNet(x ̃i) where hi ∈ Rd is the output after the average pooling layer.
+    We opt for simplicity and adopt the commonly used ResNet (He et al., 2016) to obtain hi = f(x ̃i) = ResNet(x ̃i)
+    where hi ∈ Rd is the output after the average pooling layer.
     """
 
     def __init__(self, args):
@@ -31,7 +32,6 @@ class SimCLR(nn.Module):
             nn.ReLU(),
             nn.Linear(self.n_features, args.projection_dim, bias=False),
         )
-        
 
     def get_resnet(self, name):
         resnets = {
@@ -41,7 +41,6 @@ class SimCLR(nn.Module):
         if name not in resnets.keys():
             raise KeyError(f"{name} is not a valid ResNet version")
         return resnets[name]
-
 
     def forward(self, x):
         h = self.encoder(x)

@@ -1,18 +1,12 @@
 import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+
 import torch
 import torchvision
 import argparse
 
 from torch.utils.tensorboard import SummaryWriter
-
-apex = False
-try:
-    from apex import amp
-    apex = True
-except ImportError:
-    print(
-        "Install the apex package from https://www.github.com/nvidia/apex to use fp16 for training"
-    )
 
 from model import load_model, save_model
 from modules import NT_Xent
@@ -20,12 +14,17 @@ from modules.sync_batchnorm import convert_model
 from modules.transformations import TransformsSimCLR
 from utils import post_config_hook
 
-#### pass configuration
+# pass configuration
 from experiment import ex
+import os
+
+apex = False
 
 
 def train(args, train_loader, model, criterion, optimizer, writer):
     loss_epoch = 0
+
+    # doc: here we get two samples because we set this behavior in __call__ function in transformations class
     for step, ((x_i, x_j), _) in enumerate(train_loader):
 
         optimizer.zero_grad()
@@ -39,8 +38,9 @@ def train(args, train_loader, model, criterion, optimizer, writer):
         loss = criterion(z_i, z_j)
 
         if apex and args.fp16:
-            with amp.scale_loss(loss, optimizer) as scaled_loss:
-                scaled_loss.backward()
+            # with amp.scale_loss(loss, optimizer) as scaled_loss:
+            #    scaled_loss.backward()
+            pass
         else:
             loss.backward()
 
@@ -122,5 +122,4 @@ def main(_run, _log):
         )
         args.current_epoch += 1
 
-    ## end training
     save_model(args, model, optimizer)
