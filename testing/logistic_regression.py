@@ -4,12 +4,14 @@ import torchvision.transforms as transforms
 import argparse
 import numpy as np
 
+from data.matek_dataset import MatekDataset
 from experiment import ex
 from model import load_model
 from utils import post_config_hook
 
 from modules import LogisticRegression
 from modules.transformations import TransformsSimCLR
+from sklearn.metrics import classification_report
 
 
 def inference(loader, context_model, device):
@@ -91,6 +93,10 @@ def test(args, loader, simclr_model, model, criterion, optimizer):
     loss_epoch = 0
     accuracy_epoch = 0
     model.eval()
+    gt = []
+    pd = []
+    target_names = ['BAS', 'EBO', 'EOS', 'KSC', 'LYA', 'LYT', 'MMZ', 'MOB',
+                    'MON', 'MYB', 'MYO', 'NGB', 'NGS', 'PMB', 'PMO']
     for step, (x, y) in enumerate(loader):
         model.zero_grad()
 
@@ -106,7 +112,12 @@ def test(args, loader, simclr_model, model, criterion, optimizer):
 
         loss_epoch += loss.item()
 
-    return loss_epoch, accuracy_epoch
+        gt.extend(y.tolist())
+        pd.extend(predicted.tolist())
+
+    report = classification_report(gt, pd, target_names=target_names, zero_division=1)
+
+    return loss_epoch, accuracy_epoch, report
 
 
 @ex.automain
@@ -117,6 +128,8 @@ def main(_run, _log):
     args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     root = "./datasets"
+    train_sampler = None
+    valid_sampler = None
 
     if args.dataset == "STL10":
         train_dataset = torchvision.datasets.STL10(
@@ -144,31 +157,37 @@ def main(_run, _log):
             download=True,
             transform=TransformsSimCLR(size=224).test_transform,
         )
+    elif args.dataset == "MATEK":
+        train_dataset, train_sampler, valid_sampler = MatekDataset(
+            root=root, transforms=TransformsSimCLR(size=128).test_transform, test_size=args.test_size
+        ).get_dataset()
     else:
         raise NotImplementedError
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
         batch_size=args.logistic_batch_size,
-        shuffle=True,
+        shuffle=(train_sampler is None),
         drop_last=True,
         num_workers=args.workers,
+        sampler=train_sampler,
     )
 
     test_loader = torch.utils.data.DataLoader(
-        test_dataset,
+        train_dataset,
         batch_size=args.logistic_batch_size,
-        shuffle=False,
+        shuffle=(valid_sampler is None),
         drop_last=True,
         num_workers=args.workers,
+        sampler=valid_sampler,
     )
 
     simclr_model, _, _ = load_model(args, train_loader, reload_model=True)
     simclr_model = simclr_model.to(args.device)
     simclr_model.eval()
 
-    ## Logistic Regression
-    n_classes = 10  # stl-10
+    # Logistic Regression
+    n_classes = args.n_classes  # stl-10
     model = LogisticRegression(simclr_model.n_features, n_classes)
     model = model.to(args.device)
 
@@ -193,9 +212,11 @@ def main(_run, _log):
         )
 
     # final testing
-    loss_epoch, accuracy_epoch = test(
+    loss_epoch, accuracy_epoch, report = test(
         args, arr_test_loader, simclr_model, model, criterion, optimizer
     )
     print(
         f"[FINAL]\t Loss: {loss_epoch / len(test_loader)}\t Accuracy: {accuracy_epoch / len(test_loader)}"
     )
+
+    print(report)

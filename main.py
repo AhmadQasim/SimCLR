@@ -17,6 +17,8 @@ from utils import post_config_hook
 # pass configuration
 from experiment import ex
 import os
+import numpy as np
+from data.matek_dataset import MatekDataset
 
 apex = False
 
@@ -25,7 +27,7 @@ def train(args, train_loader, model, criterion, optimizer, writer):
     loss_epoch = 0
 
     # doc: here we get two samples because we set this behavior in __call__ function in transformations class
-    for step, ((x_i, x_j), _) in enumerate(train_loader):
+    for step, ((x_i, x_j), y) in enumerate(train_loader):
 
         optimizer.zero_grad()
         x_i = x_i.to(args.device)
@@ -75,6 +77,10 @@ def main(_run, _log):
         train_dataset = torchvision.datasets.CIFAR10(
             root, download=True, transform=TransformsSimCLR(size=32)
         )
+    elif args.dataset == "MATEK":
+        train_dataset, train_sampler, _ = MatekDataset(
+            root=root, transforms=TransformsSimCLR(size=128), test_size=args.test_size
+        ).get_dataset()
     else:
         raise NotImplementedError
 
