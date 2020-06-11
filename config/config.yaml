@@ -1,10 +1,10 @@
 # train options
 seed: 42 # sacred handles automatic seeding when passed in the config
-batch_size: 512
+batch_size: 1024
 workers: 16
 start_epoch: 0
-epochs: 300
-dataset: "MATEK" # STL10, CIFAR10
+epochs: 100
+dataset: "JURKAT" # STL10, CIFAR10, MATEK, JURKAT
 pretrain: True
 n_classes: 15
 test_size: 0.8

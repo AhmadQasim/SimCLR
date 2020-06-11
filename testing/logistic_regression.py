@@ -1,10 +1,14 @@
+import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+
 import torch
 import torchvision
-import torchvision.transforms as transforms
 import argparse
 import numpy as np
 
 from data.matek_dataset import MatekDataset
+from data.jurkat_dataset import JurkatDataset
 from experiment import ex
 from model import load_model
 from utils import post_config_hook
@@ -95,8 +99,11 @@ def test(args, loader, simclr_model, model, criterion, optimizer):
     model.eval()
     gt = []
     pd = []
-    target_names = ['BAS', 'EBO', 'EOS', 'KSC', 'LYA', 'LYT', 'MMZ', 'MOB',
-                    'MON', 'MYB', 'MYO', 'NGB', 'NGS', 'PMB', 'PMO']
+    if args.dataset == "MATEK":
+        target_names = ['BAS', 'EBO', 'EOS', 'KSC', 'LYA', 'LYT', 'MMZ', 'MOB',
+                        'MON', 'MYB', 'MYO', 'NGB', 'NGS', 'PMB', 'PMO']
+    else:
+        target_names = ['Anaphase', 'G1', 'G2', 'Metaphase', 'Prophase', 'S', 'Telophase']
     for step, (x, y) in enumerate(loader):
         model.zero_grad()
 
@@ -132,7 +139,7 @@ def main(_run, _log):
     valid_sampler = None
 
     if args.dataset == "STL10":
-        train_dataset = torchvision.datasets.STL10(
+        dataset = torchvision.datasets.STL10(
             root,
             split="train",
             download=True,
@@ -145,7 +152,7 @@ def main(_run, _log):
             transform=TransformsSimCLR(size=224).test_transform,
         )
     elif args.dataset == "CIFAR10":
-        train_dataset = torchvision.datasets.CIFAR10(
+        dataset = torchvision.datasets.CIFAR10(
             root,
             train=True,
             download=True,
@@ -158,14 +165,18 @@ def main(_run, _log):
             transform=TransformsSimCLR(size=224).test_transform,
         )
     elif args.dataset == "MATEK":
-        train_dataset, train_sampler, valid_sampler = MatekDataset(
+        dataset, train_sampler, valid_sampler = MatekDataset(
             root=root, transforms=TransformsSimCLR(size=128).test_transform, test_size=args.test_size
+        ).get_dataset()
+    elif args.dataset == "JURKAT":
+        dataset, train_sampler, valid_sampler = JurkatDataset(
+            root=root, transforms=TransformsSimCLR(size=64).test_transform, test_size=args.test_size
         ).get_dataset()
     else:
         raise NotImplementedError
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset,
+        dataset,
         batch_size=args.logistic_batch_size,
         shuffle=(train_sampler is None),
         drop_last=True,
@@ -174,7 +185,7 @@ def main(_run, _log):
     )
 
     test_loader = torch.utils.data.DataLoader(
-        train_dataset,
+        dataset,
         batch_size=args.logistic_batch_size,
         shuffle=(valid_sampler is None),
         drop_last=True,
