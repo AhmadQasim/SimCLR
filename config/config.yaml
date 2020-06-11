@@ -6,7 +6,7 @@ start_epoch: 0
 epochs: 100
 dataset: "JURKAT" # STL10, CIFAR10, MATEK, JURKAT
 pretrain: True
-n_classes: 15
+n_classes: 7 # 10, 10, 15, 7 (respective to the dataset order given above)
 test_size: 0.8
 
 # model options
@@ -30,4 +30,4 @@ fp16_opt_level: "O2"
 
 # logistic regression options
 logistic_batch_size: 32
-logistic_epochs: 500
+logistic_epochs: 10

@@ -121,7 +121,8 @@ def test(args, loader, simclr_model, model, criterion, optimizer):
 
         gt.extend(y.tolist())
         pd.extend(predicted.tolist())
-
+    print(np.unique(pd))
+    print(np.unique(gt))
     report = classification_report(gt, pd, target_names=target_names, zero_division=1)
 
     return loss_epoch, accuracy_epoch, report
