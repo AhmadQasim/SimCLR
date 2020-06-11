@@ -20,6 +20,7 @@ import os
 import numpy as np
 from data.matek_dataset import MatekDataset
 from data.jurkat_dataset import JurkatDataset
+from data.plasmodium_dataset import PlasmodiumDataset
 
 apex = False
 
@@ -85,6 +86,10 @@ def main(_run, _log):
     elif args.dataset == "JURKAT":
         train_dataset, train_sampler, _ = JurkatDataset(
             root=root, transforms=TransformsSimCLR(size=64), test_size=args.test_size
+        ).get_dataset()
+    elif args.dataset == "PLASMODIUM":
+        train_dataset, train_sampler, _ = PlasmodiumDataset(
+            root=root, transforms=TransformsSimCLR(size=128), test_size=args.test_size
         ).get_dataset()
     else:
         raise NotImplementedError

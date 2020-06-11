@@ -1,5 +1,7 @@
 import os
 
+from data.plasmodium_dataset import PlasmodiumDataset
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 import torch
@@ -99,11 +101,15 @@ def test(args, loader, simclr_model, model, criterion, optimizer):
     model.eval()
     gt = []
     pd = []
+
     if args.dataset == "MATEK":
         target_names = ['BAS', 'EBO', 'EOS', 'KSC', 'LYA', 'LYT', 'MMZ', 'MOB',
                         'MON', 'MYB', 'MYO', 'NGB', 'NGS', 'PMB', 'PMO']
-    else:
+    elif args.dataset == "JURKAT":
         target_names = ['Anaphase', 'G1', 'G2', 'Metaphase', 'Prophase', 'S', 'Telophase']
+    else:
+        target_names = ["parasitized", "uninfected"]
+
     for step, (x, y) in enumerate(loader):
         model.zero_grad()
 
@@ -121,8 +127,7 @@ def test(args, loader, simclr_model, model, criterion, optimizer):
 
         gt.extend(y.tolist())
         pd.extend(predicted.tolist())
-    print(np.unique(pd))
-    print(np.unique(gt))
+
     report = classification_report(gt, pd, target_names=target_names, zero_division=1)
 
     return loss_epoch, accuracy_epoch, report
@@ -172,6 +177,10 @@ def main(_run, _log):
     elif args.dataset == "JURKAT":
         dataset, train_sampler, valid_sampler = JurkatDataset(
             root=root, transforms=TransformsSimCLR(size=64).test_transform, test_size=args.test_size
+        ).get_dataset()
+    elif args.dataset == "PLASMODIUM":
+        dataset, train_sampler, valid_sampler = PlasmodiumDataset(
+            root=root, transforms=TransformsSimCLR(size=128).test_transform, test_size=args.test_size
         ).get_dataset()
     else:
         raise NotImplementedError
