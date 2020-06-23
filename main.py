@@ -67,29 +67,27 @@ def main(_run, _log):
     args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     args.n_gpu = torch.cuda.device_count()
 
-    root = "./datasets"
-
     train_sampler = None
 
     if args.dataset == "STL10":
         train_dataset = torchvision.datasets.STL10(
-            root, split="unlabeled", download=True, transform=TransformsSimCLR(size=96)
+            root=args.dataset_root, split="unlabeled", download=True, transform=TransformsSimCLR(size=96)
         )
     elif args.dataset == "CIFAR10":
         train_dataset = torchvision.datasets.CIFAR10(
-            root, download=True, transform=TransformsSimCLR(size=32)
+            root=args.dataset_root, download=True, transform=TransformsSimCLR(size=32)
         )
     elif args.dataset == "MATEK":
-        train_dataset, train_sampler, _ = MatekDataset(
-            root=root, transforms=TransformsSimCLR(size=128), test_size=args.test_size
+        train_dataset, _ = MatekDataset(
+            root=args.dataset_root, transforms=TransformsSimCLR(size=128)
         ).get_dataset()
     elif args.dataset == "JURKAT":
-        train_dataset, train_sampler, _ = JurkatDataset(
-            root=root, transforms=TransformsSimCLR(size=64), test_size=args.test_size
+        train_dataset, _ = JurkatDataset(
+            root=args.dataset_root, transforms=TransformsSimCLR(size=64)
         ).get_dataset()
     elif args.dataset == "PLASMODIUM":
-        train_dataset, train_sampler, _ = PlasmodiumDataset(
-            root=root, transforms=TransformsSimCLR(size=128), test_size=args.test_size
+        train_dataset, _ = PlasmodiumDataset(
+            root=args.dataset_root, transforms=TransformsSimCLR(size=128)
         ).get_dataset()
     else:
         raise NotImplementedError

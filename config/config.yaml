@@ -4,10 +4,11 @@ batch_size: 512
 workers: 16
 start_epoch: 0
 epochs: 100
-dataset: "PLASMODIUM" # STL10, CIFAR10, MATEK, JURKAT, PLASMODIUM
+
+dataset: "MATEK" # STL10, CIFAR10, MATEK, JURKAT, PLASMODIUM
 pretrain: True
-n_classes: 2 # 10, 10, 15, 7, 2 (respective to the dataset order given above)
-test_size: 0.8
+n_classes: 15 # 10, 10, 15, 7, 2 (respective to the dataset order given above)
+dataset_root: "~/datasets/stratified"
 
 # model options
 resnet: "resnet18"

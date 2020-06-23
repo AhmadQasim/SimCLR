@@ -140,53 +140,52 @@ def main(_run, _log):
 
     args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    root = "./datasets"
     train_sampler = None
     valid_sampler = None
 
     if args.dataset == "STL10":
-        dataset = torchvision.datasets.STL10(
-            root,
+        train_dataset = torchvision.datasets.STL10(
+            args.dataset_root,
             split="train",
             download=True,
             transform=TransformsSimCLR(size=224).test_transform,
         )
         test_dataset = torchvision.datasets.STL10(
-            root,
+            args.dataset_root,
             split="test",
             download=True,
             transform=TransformsSimCLR(size=224).test_transform,
         )
     elif args.dataset == "CIFAR10":
-        dataset = torchvision.datasets.CIFAR10(
-            root,
+        train_dataset = torchvision.datasets.CIFAR10(
+            args.dataset_root,
             train=True,
             download=True,
             transform=TransformsSimCLR(size=224).test_transform,
         )
         test_dataset = torchvision.datasets.CIFAR10(
-            root,
+            args.dataset_root,
             train=False,
             download=True,
             transform=TransformsSimCLR(size=224).test_transform,
         )
     elif args.dataset == "MATEK":
-        dataset, train_sampler, valid_sampler = MatekDataset(
-            root=root, transforms=TransformsSimCLR(size=128).test_transform, test_size=args.test_size
+        train_dataset, test_dataset = MatekDataset(
+            root=args.dataset_root, transforms=TransformsSimCLR(size=128).test_transform
         ).get_dataset()
     elif args.dataset == "JURKAT":
-        dataset, train_sampler, valid_sampler = JurkatDataset(
-            root=root, transforms=TransformsSimCLR(size=64).test_transform, test_size=args.test_size
+        train_dataset, test_dataset = JurkatDataset(
+            root=args.dataset_root, transforms=TransformsSimCLR(size=64).test_transform
         ).get_dataset()
     elif args.dataset == "PLASMODIUM":
-        dataset, train_sampler, valid_sampler = PlasmodiumDataset(
-            root=root, transforms=TransformsSimCLR(size=128).test_transform, test_size=args.test_size
+        train_dataset, test_dataset = PlasmodiumDataset(
+            root=args.dataset_root, transforms=TransformsSimCLR(size=128).test_transform
         ).get_dataset()
     else:
         raise NotImplementedError
 
     train_loader = torch.utils.data.DataLoader(
-        dataset,
+        train_dataset,
         batch_size=args.logistic_batch_size,
         shuffle=(train_sampler is None),
         drop_last=True,
@@ -195,7 +194,7 @@ def main(_run, _log):
     )
 
     test_loader = torch.utils.data.DataLoader(
-        dataset,
+        test_dataset,
         batch_size=args.logistic_batch_size,
         shuffle=(valid_sampler is None),
         drop_last=True,
